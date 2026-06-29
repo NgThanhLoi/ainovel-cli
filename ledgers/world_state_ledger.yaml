@@ -1,0 +1,126 @@
+# World-State Ledger — Thiên Mạc Đơn Giới
+# Cập nhật sau mỗi chapter/chặng
+
+chapter: 1
+reality_arc: "Mondstadt"
+reality_location: "Đồi Starfell, ngoại ô Mondstadt"
+previous_reality_location: null
+travel_transition: "completed"
+current_task: "Aether tiến về Mondstadt lần đầu"
+current_task_continues: true
+screen_video_id: "teaser_001"
+screen_topic: "Thiên Mạc xuất hiện + teaser mơ hồ"
+screen_source_type: "future_fragment"
+canon_status: "future_possible"
+future_reveal_count: 1
+future_reveal_items:
+  - "Stormterror tấn công Mondstadt (hình ảnh chớp)"
+  - "Một vị thần gục ngã"
+  - "Thiếu nữ tóc vàng trong lửa đen (Lumine)"
+tone: "wonder"
+aftereffect: "7 quốc gia xác nhận cùng thấy Thiên Mạc; KoF họp khẩn; Fatui mở hồ sơ"
+relationship_delta: "Aether-Paimon tin tưởng qua bất định chung"
+faction_action: "KoF: thu thập tin tức; Fatui: quan sát; Abyss: ẩn"
+public_knowledge_delta: "Thiên Mạc tồn tại"
+route_changed: false
+next_breather_needed: false
+next_video_type: "social_reaction_or_comedy"
+canon_ooc_gate_required: false
+lore_research_notes: []
+
+chapter: 5
+reality_arc: "Mondstadt"
+reality_location: "Mondstadt, trụ sở Đội Kỵ Sĩ"
+previous_reality_location: "Đồi Starfell"
+travel_transition: "completed"
+current_task: "Aether gặp Jean, tìm hiểu Stormterror"
+current_task_continues: true
+screen_video_id: "C01"
+screen_topic: "PV Jean — Sư Tử Và Kiếm"
+screen_source_type: "character_pv"
+canon_status: "canon"
+future_reveal_count: 0
+tone: "emotional_pv"
+aftereffect: "Dân Mondstadt thêm tin tưởng Jean; Fatui ghi nhận năng lực KoF"
+relationship_delta: "Aether-Jean hợp tác ban đầu"
+faction_action: "KoF: chuẩn bị phòng thủ Stormterror"
+public_knowledge_delta: "Jean là Đội Trưởng tận tâm"
+route_changed: false
+next_breather_needed: false
+next_video_type: "action_quiet_investigation"
+
+chapter: 10
+reality_arc: "Mondstadt"
+reality_location: "Mondstadt, phế tích Phong Long"
+previous_reality_location: "Mondstadt thành phố"
+travel_transition: "completed"
+current_task: "Aether vào phế tích Phong Long, chuẩn bị đối đầu Stormterror"
+current_task_continues: true
+screen_video_id: "hook_001"
+screen_topic: "Abyss操控Dvalin真相 hé lộ"
+screen_source_type: "future_fragment"
+canon_status: "canon_inferred"
+future_reveal_count: 1
+tone: "wonder_crisis"
+aftereffect: "Aether biết mục tiêu tiếp theo; KoF chuẩn bị chiến đấu"
+relationship_delta: "Aether-Venti gặp gỡ, Venti hé lộ thân phận Phong Thần"
+faction_action: "Abyss: củng cố kiểm soát Dvalin; Fatui: chờ thời cơ"
+public_knowledge_delta: "Stormterror bị Abyss kiểm soát (nội bộ KoF)"
+route_changed: false
+next_breather_needed: true
+
+chapter: 28
+reality_arc: "Liyue"
+reality_location: "Cảng Liyue"
+previous_reality_location: "Mondstadt"
+travel_transition: "completed"
+current_task: "Aether đến Liyue, tìm hiểu về Nham Thần"
+current_task_continues: true
+screen_video_id: "C04"
+screen_topic: "PV Zhongli — Khế Ước"
+screen_source_type: "character_pv"
+canon_status: "canon"
+future_reveal_count: 1
+tone: "lore_hint_emotional"
+aftereffect: "Dân Liyue bắt đầu nghi ngờ thân phận Zhongli"
+relationship_delta: "Aether-Zhongli gặp gỡ, hợp tác dè dặt"
+faction_action: "Liyue Qixing: quan sát; Fatui: kích hoạt kế hoạch Osial"
+route_changed: false
+next_breather_needed: false
+
+chapter: 58
+reality_arc: "Liyue"
+reality_location: "Cảng Liyue, sau trận Osial"
+previous_reality_location: "Vong Sưu Đình"
+travel_transition: "completed"
+current_task: "Aether chuẩn bị rời Liyue đến Inazuma"
+current_task_continues: true
+screen_video_id: "A05"
+screen_topic: "Zhongli và Guizhong quá khứ"
+screen_source_type: "lore_item"
+canon_status: "canon"
+future_reveal_count: 1
+tone: "emotional_lore_hint"
+aftereffect: "Zhongli đối diện quá khứ; Aether hiểu thêm về trọng trách của Thần"
+relationship_delta: "Aether-Zhongli thấu hiểu sâu hơn"
+route_changed: false
+next_breather_needed: true
+
+chapter: 77
+reality_arc: "Inazuma"
+reality_location: "Cõi U Sầu"
+previous_reality_location: "Thành Inazuma"
+travel_transition: "in_progress"
+current_task: "Aether đối diện Ei, giúp Ei vượt qua nỗi đau mất Makoto"
+current_task_continues: true
+screen_video_id: "C07"
+screen_topic: "PV Ei — Vĩnh Hằng và mất mát"
+screen_source_type: "character_pv"
+canon_status: "canon"
+future_reveal_count: 1
+tone: "emotional_pv"
+aftereffect: "Ei rời Cõi U Sầu, Shogun chấp nhận thay đổi"
+relationship_delta: "Aether-Ei tin tưởng, Ei mở lòng"
+faction_action: "Shogunate: chuyển từ Vĩnh Hằng sang mở cửa"
+route_changed: false
+next_breather_needed: true

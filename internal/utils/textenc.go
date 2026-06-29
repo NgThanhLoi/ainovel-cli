@@ -1,11 +1,47 @@
 package utils
 
 import (
+	"regexp"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
+
+// markdownStrippers dùng để loại bỏ định dạng Markdown trước khi đếm từ.
+var (
+	headingRe     = regexp.MustCompile(`#{1,6}\s*`)
+	boldRe        = regexp.MustCompile(`\*\*(.*?)\*\*`)
+	italicRe      = regexp.MustCompile(`\*(.*?)\*`)
+	strikeRe      = regexp.MustCompile(`~~(.*?)~~`)
+	inlineCodeRe  = regexp.MustCompile("`(.*?)`")
+	linkRe        = regexp.MustCompile(`\[(.*?)\]\(.*?\)`)
+)
+
+// CountVietnameseWords returns the number of Vietnamese words in text.
+// Words are whitespace-delimited tokens that contain at least one letter.
+// Markdown formatting is stripped before counting.
+func CountVietnameseWords(text string) int {
+	text = headingRe.ReplaceAllString(text, "")
+	text = boldRe.ReplaceAllString(text, "$1")
+	text = italicRe.ReplaceAllString(text, "$1")
+	text = strikeRe.ReplaceAllString(text, "$1")
+	text = inlineCodeRe.ReplaceAllString(text, "$1")
+	text = linkRe.ReplaceAllString(text, "$1")
+
+	tokens := strings.Fields(text)
+	count := 0
+	for _, tok := range tokens {
+		for _, r := range tok {
+			if unicode.IsLetter(r) {
+				count++
+				break
+			}
+		}
+	}
+	return count
+}
 
 // DecodeText 把用户提供的文本文件字节解码为 UTF-8：非法 UTF-8 时按 GB18030
 //（GBK 超集）转码——网络流传的中文小说 txt 大量为 GBK 编码，直接当 UTF-8 读

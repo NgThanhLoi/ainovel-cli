@@ -27,6 +27,8 @@ type Prompts struct {
 	ArchitectShort   string
 	ArchitectLong    string
 	Writer           string
+	Planner          string
+	Drafter          string
 	Editor           string
 	ImportFoundation string
 	ImportAnalyzer   string
@@ -100,6 +102,8 @@ func loadPrompts() Prompts {
 		ArchitectShort:   withSimulationGuidance(mustRead(promptsFS, "prompts/architect-short.md"), "architect"),
 		ArchitectLong:    withSimulationGuidance(mustRead(promptsFS, "prompts/architect-long.md"), "architect"),
 		Writer:           withSimulationGuidance(mustRead(promptsFS, "prompts/writer.md"), "writer"),
+		Planner:           withSimulationGuidance(mustRead(promptsFS, "prompts/planner.md"), "writer"),
+		Drafter:          withSimulationGuidance(mustRead(promptsFS, "prompts/drafter.md"), "writer"),
 		Editor:           withSimulationGuidance(mustRead(promptsFS, "prompts/editor.md"), "editor"),
 		ImportFoundation: mustRead(promptsFS, "prompts/import-foundation.md"),
 		ImportAnalyzer:   mustRead(promptsFS, "prompts/import-chapter-analyzer.md"),

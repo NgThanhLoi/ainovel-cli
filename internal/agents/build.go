@@ -126,6 +126,14 @@ func BuildCoordinator(
 		tools.NewSaveArcSummaryTool(store),
 		tools.NewSaveVolumeSummaryTool(store),
 	}
+	drafterTools := []agentcore.Tool{
+		// Drafter không có tool — chỉ output text
+	}
+	plannerTools := []agentcore.Tool{
+		contextTool,
+		readChapter,
+		tools.NewPlanChapterTool(store),
+	}
 
 	// Provider failover 只记日志,不通知宿主
 	reportFailover := func(ev bootstrap.FailoverEvent) {
@@ -141,6 +149,8 @@ func BuildCoordinator(
 
 	architectModel := models.ForRoleWithFailover("architect", reportFailover)
 	writerModel := models.ForRoleWithFailover("writer", reportFailover)
+	plannerModel := models.ForRoleWithFailover("planner", reportFailover)
+	drafterModel := models.ForRoleWithFailover("drafter", reportFailover)
 	editorModel := models.ForRoleWithFailover("editor", reportFailover)
 	coordinatorModel := models.ForRoleWithFailover("coordinator", reportFailover)
 
@@ -296,7 +306,44 @@ func BuildCoordinator(
 		},
 	}
 
-	subagentTool := subagent.New(architectShort, architectLong, writer, editor)
+	drafterPrompt := bundle.Prompts.Drafter
+	if style, ok := bundle.Styles[cfg.Style]; ok {
+		drafterPrompt += "\n\n" + style
+	}
+
+	drafter := subagent.Config{
+		Name:               "drafter",
+		Description:        "Người viết chương: chỉ viết chính văn, không gọi tool",
+		Model:              drafterModel,
+		SystemPrompt:       drafterPrompt,
+		Tools:              drafterTools,
+		MaxTurns:           1,
+		MaxRetries:         subagentMaxRetries,
+		ThinkingLevel:      roleThinking(cfg, "drafter"),
+		ToolsAreIdempotent: true,
+		OnMessage:          onMsg,
+		// Drafter không có tool, chỉ output text — end turn tự nhiên
+	}
+
+	plannerPrompt := bundle.Prompts.Planner
+	if style, ok := bundle.Styles[cfg.Style]; ok {
+		plannerPrompt += "\n\n" + style
+	}
+	planner := subagent.Config{
+		Name:               "planner",
+		Description:        "Người lập kế hoạch chương: chỉ plan, không draft, không check, không commit",
+		Model:              plannerModel,
+		SystemPrompt:       plannerPrompt,
+		Tools:              plannerTools,
+		MaxTurns:           6,
+		MaxRetries:         subagentMaxRetries,
+		ThinkingLevel:      roleThinking(cfg, "planner"),
+		ToolsAreIdempotent: true,
+		OnMessage:          onMsg,
+		StopAfterTools:     []string{"plan_chapter"},
+	}
+
+	subagentTool := subagent.New(architectShort, architectLong, writer, editor, drafter, planner)
 
 	coordinatorEngine := newContextManager(contextManagerConfig{
 		Model:            coordinatorModel,
@@ -310,7 +357,8 @@ func BuildCoordinator(
 	agent := agentcore.NewAgent(
 		agentcore.WithModel(coordinatorModel),
 		agentcore.WithSystemPrompt(bundle.Prompts.Coordinator),
-		agentcore.WithTools(subagentTool, contextTool, tools.NewSaveDirectiveTool(store), tools.NewReopenBookTool(store)),
+		agentcore.WithTools(subagentTool, contextTool, tools.NewSaveDirectiveTool(store),
+			tools.NewReopenBookTool(store)),
 		agentcore.WithMaxTurns(100_000),
 		agentcore.WithOnMessage(coordinatorOnMessage),
 		agentcore.WithToolsAreIdempotent(true),
@@ -335,7 +383,7 @@ func BuildCoordinator(
 		case "architect":
 			subagentTool.SetThinkingLevel("architect_short", level)
 			subagentTool.SetThinkingLevel("architect_long", level)
-		case "writer", "editor":
+		case "writer", "editor", "planner", "drafter":
 			subagentTool.SetThinkingLevel(role, level)
 		}
 	}

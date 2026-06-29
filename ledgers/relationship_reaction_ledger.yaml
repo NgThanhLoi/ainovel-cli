@@ -1,0 +1,24 @@
+# Relationship Reaction Ledger
+# Ship/CP chỉ là nội dung Thiên Mạc, không canon hóa
+
+mode: "reaction_only_no_canonization"
+active_pairings: ["Aether/Jean (D02 ship meme)", "Aether/Furina (hint từ chương sau)"]
+public_pressure_by_pairing:
+  "Aether/Jean": "Nhẹ — dân Mondstadt trêu, Diluc khó chịu"
+  "Aether/Furina": "Chưa có — chỉ hint từ PV"
+
+involved_character_discomfort:
+  "Aether": "Bối rối nhẹ với ship meme, né tránh chủ đề"
+  "Jean": "Ngại, tập trung vào công việc, không phản hồi"
+  "Diluc": "Khó chịu, từ chối bình luận"
+
+forbidden:
+  - canon_couple_confirmation
+  - using_ship_video_as_truth
+  - forcing_one_true_pairing
+  - overwriting_character_personality_for_ship
+
+notes: |
+  - D02 (Chemistry): ship tình cờ Jean/Diluc, dân trêu → social-death nhẹ
+  - Chưa có ship nặng nào (tuân thủ phase 1: chương 1-50 rất nhẹ)
+  - Phase 2 (chương 51-150) có thể bắt đầu nhiều cặp hơn

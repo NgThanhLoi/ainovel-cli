@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/voocel/ainovel-cli/internal/domain"
+	"github.com/voocel/ainovel-cli/internal/utils"
 )
 
 // DraftStore 管理章节构思、草稿和终稿。
@@ -67,14 +68,14 @@ func (s *DraftStore) LoadDraft(chapter int) (string, error) {
 	return string(data), nil
 }
 
-// LoadChapterContent 加载章节草稿正文及字数。
+// LoadChapterContent 加载章节草稿正文及字数 (từ tiếng Việt).
 func (s *DraftStore) LoadChapterContent(chapter int) (string, int, error) {
 	draft, err := s.LoadDraft(chapter)
 	if err != nil {
 		return "", 0, err
 	}
 	if draft != "" {
-		return draft, utf8.RuneCountInString(draft), nil
+		return draft, utils.CountVietnameseWords(draft), nil
 	}
 	return "", 0, nil
 }

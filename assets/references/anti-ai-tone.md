@@ -1,35 +1,35 @@
-# 去 AI 味判据
+# Tiêu chí khử AI-tiếng
 
-本文是 writer 与 editor 共用的"AI 味"判据库:writer 写作时规避以下所有模式,editor 审阅 aesthetic 维度时按此逐项检查并**引用原文**举证。
+Tài liệu này là kho tiêu chí "AI-tiếng" dùng chung cho writer và editor: writer khi viết tránh tất cả pattern dưới đây, editor khi đánh giá chiều aesthetic kiểm tra từng mục và **trích dẫn nguyên văn** làm chứng.
 
-> 可机械枚举的部分(破折号、固定套句、高频疲劳词)已由 `working_memory.user_rules.structured` 在 commit 时强制检查,本文专管**无法机械化的语义判断**。两者互补:机械层抓表面,本文抓质感。
+> Phần có thể liệt kê cơ học (câu sáo cố định, từ mệt mỏi tần cao) đã được `working_memory.user_rules.structured` kiểm tra cưỡng chế khi commit, tài liệu này chuyên lo **phán đoán ngữ nghĩa không thể cơ học hoá**. Hai tầng bổ trợ: tầng cơ học bắt bề mặt, tài liệu này bắt chất văn.
 
-## 一、结构 AI 味
+## I. Cấu trúc AI-tiếng
 
-- **三段式 / 排比三连**:连用三个结构对称的短句或分句来"造势"("他不再犹豫,不再退缩,不再回头")。改法:保留一句最有力的,其余拆成动作或细节。
-- **整齐对称句堆叠**:每段长度、句式高度雷同,读起来像列表。改法:长短句交错,让节奏有呼吸。
-- **章内编号小标题 / `##` 切割**:正文里出现 `一` `二` `三` 或 `##`/`###` 分段。改法:只保留章标题,场景切换用空行自然过渡。
+- **Ba đoạn / xếp ba liên tiếp**: dùng ba câu ngắn hoặc mệnh đề cấu trúc đối xứng để "tạo thế" ("Anh không do dự nữa, không lùi bước nữa, không quay đầu nữa"). Cách sửa: giữ lại một câu mạnh nhất, số còn lại xẻ thành hành động hoặc chi tiết.
+- **Chồng câu đối xứng đều đặn**: mỗi đoạn dài ngắn, cấu trúc câu quá giống nhau, đọc như danh sách. Cách sửa: dài ngắn xen kẽ, để nhịp có hơi thở.
+- **Đề mục đánh số / `##` cắt trong chương**: Trong chính văn xuất hiện `Một` `Hai` `Ba` hoặc `##`/`###` để phân đoạn. Cách sửa: chỉ giữ tiêu đề chương, chuyển cảnh dùng dòng trống tự nhiên.
 
-## 二、用词 AI 味
+## II. Từ vựng AI-tiếng
 
-- **四字成语堆砌**:一段里挤进多个成语充当描写("惊心动魄、险象环生、千钧一发")。改法:用一个具体动作或画面替代一串成语。
-- **明喻套句**:"如同……一般""宛如……似的""仿佛……一样"的固定句式反复出现。改法:换成精准动词或新鲜本体,或直接白描。
-- **量词癖 / 虚词癖**:"一丝""一抹""一缕"配情绪,"不禁""竟然""不由得""仿佛"当口头禅。改法:删掉缓冲词,让动作直接发生("他笑了",不是"他不禁勾起一抹笑意")。
-- **抽象大词**:"某种程度上""值得注意的是""不知为何""说不清道不明"——叙述者在替读者总结。改法:删掉,把判断让位给具体事实。
-- **对比定义句式**:"他要的不是 X,而是 Y""这不是结束,而是开始"这类用否定+转折来"点题"的套路反复出现。改法:用一个具体动作或选择直接呈现,不靠句式造金句感。
+- **Thành ngữ chất đống**: một đoạn nhồi nhiều thành ngữ làm miêu tả ("hồi hộp lo âu, tình thế ngàn cân treo sợi tóc"). Cách sửa: dùng một hành động hoặc hình ảnh cụ thể thay thế một chuỗi thành ngữ.
+- **Câu tỉ dụ sáo**: "như… vậy" "tựa như… vậy" "khác nào… vậy" xuất hiện lặp đi lặp lại. Cách sửa: đổi thành động từ chính xác hoặc hình ảnh mới, hoặc bỏ hẳn so sánh.
+- **Nghiện từ đệm / từ đếm**: "một tia" "một thoáng" "một chút" kèm cảm xúc, "bỗng" "chợt" "đột nhiên" "dường như" làm câu cửa miệng. Cách sửa: xoá từ đệm, để hành động xảy ra trực tiếp ("Anh cười" chứ không phải "Anh không khỏi khẽ cười").
+- **Đại từ trừu tượng**: "theo một nghĩa nào đó" "đáng chú ý là" "không hiểu sao" — người kể đang thay độc giả tổng kết. Cách sửa: xoá đi, để phán đoán vào sự thật cụ thể.
+- **Câu thức so sánh phủ định**: "Điều anh muốn không phải X, mà là Y" "Đây không phải kết thúc, mà là bắt đầu" — loại dùng phủ định + chuyển ngoặt để "chấm câu" xuất hiện lặp lại. Cách sửa: dùng một hành động hoặc lựa chọn cụ thể trình bày trực tiếp, không dựa vào thức câu tạo cảm giác câu vàng.
 
-## 三、描写 AI 味
+## III. Miêu tả AI-tiếng
 
-- **抽象概述代替具象五感**:"环境很压抑""气氛紧张"这类标签式概述。改法:给一个可被触觉/嗅觉/听觉感知的具体细节(优于纯视觉)。
-- **情绪贴标签**:直接写"他很紧张/愤怒/悲伤"。改法:用身体反应和选择呈现("指节发白""喉头发紧"),不点名情绪。
+- **Tóm lược trừu tượng thay cho năm giác quan cụ thể**: "không khí ngột ngạt" "bầu không khí căng thẳng" kiểu gắn nhãn tóm lược. Cách sửa: đưa một chi tiết cụ thể có thể cảm nhận bằng xúc giác/khứu giác/thính giác (ưu tiên hơn thuần thị giác).
+- **Dán nhãn cảm xúc**: viết thẳng "Anh rất căng thẳng/giận dữ/buồn bã". Cách sửa: dùng phản ứng cơ thể và lựa chọn để trình bày ("đốt ngón tay trắng bệch" "cổ họng nghẹn lại"), không gọi tên cảm xúc.
 
-## 四、对话 AI 味
+## IV. Hội thoại AI-tiếng
 
-- **角色同质化**:去掉说话人标记后无法分辨谁在说——人人句式、用词、文化层次一样。改法:给每个角色稳定的句长、口头禅、潜台词比例。
-- **过度解释动机**:角色把自己的心理和盘托出,或叙述者紧跟着解释"他这么说是因为……"。改法:让动机藏在选择和言外之意里,信任读者。
-- **书面腔**:所有人都说完整、规整、带逻辑连接词的句子。改法:口语有停顿、省略、答非所问。
+- **Đồng chất hoá nhân vật**: bỏ nhãn người nói không phân biệt được ai đang nói — ai cũng cùng cấu trúc câu, từ vựng, tầng văn hoá. Cách sửa: cho mỗi nhân vật độ dài câu, câu cửa miệng, tỉ lệ ẩn ý ổn định.
+- **Giải thích thừa động cơ**: nhân vật kể hết tâm lý ra, hoặc người kể giải thích ngay sau "Anh nói thế là vì…". Cách sửa: để động cơ ẩn trong lựa chọn và hàm ý, tin tưởng độc giả.
+- **Giọng sách vở**: tất cả đều nói câu hoàn chỉnh, ngay ngắn, có từ nối logic. Cách sửa: khẩu ngữ có ngập ngừng, tỉnh lược, trả lời không đúng trọng tâm.
 
-## 五、节奏与情感 AI 味
+## V. Nhịp điệu và cảm xúc AI-tiếng
 
-- **事事交代完整**:每个动作、因果都写满,不留想象空间。改法:该藏的藏,用留白制造追读。
-- **强行升华 / 结尾点题**:章末拔高到人生感悟或主题金句。改法:停在具体的画面、选择或情绪余波上,不替读者总结意义。
+- **Kể hết mọi thứ**: mỗi hành động, nguyên nhân kết quả đều viết đầy đủ, không chừa không gian tưởng tượng. Cách sửa: đáng giấu thì giấu, dùng khoảng lặng tạo động lực đọc tiếp.
+- **Ép thăng hoa / kết luận cuối chương**: cuối chương nâng lên thành cảm ngộ nhân sinh hoặc câu vàng chủ đề. Cách sửa: dừng ở hình ảnh cụ thể, lựa chọn hoặc dư âm cảm xúc, không thay độc giả tổng kết ý nghĩa.

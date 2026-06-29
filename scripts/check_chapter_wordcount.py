@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-章节字数检查脚本
-检查指定章节文件的字数，低于3000字时提示需要扩充
+Kiểm tra số từ tiếng Việt của các chương.
+Đếm từ (word) tiếng Việt - token phân cách bởi whitespace, không tính dấu câu.
 """
 
 import re
@@ -16,8 +16,8 @@ if sys.platform == 'win32':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 
-def count_chinese_words(text: str) -> int:
-    """统计中文字数（排除标点符号和 Markdown 标记）"""
+def count_vietnamese_words(text: str) -> int:
+    """Đếm số từ tiếng Việt (loại bỏ định dạng Markdown, chỉ tính token có chữ cái)"""
     text = re.sub(r'#{1,6}\s*', '', text)
     text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
     text = re.sub(r'\*(.*?)\*', r'\1', text)
@@ -25,18 +25,24 @@ def count_chinese_words(text: str) -> int:
     text = re.sub(r'`(.*?)`', r'\1', text)
     text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
 
-    chinese_chars = re.findall(r'[\u4e00-\u9fff]', text)
-    return len(chinese_chars)
+    tokens = text.split()
+    count = 0
+    for tok in tokens:
+        for ch in tok:
+            if ch.isalpha():
+                count += 1
+                break
+    return count
 
 
 def extract_content_from_chapter(file_path: Path) -> str:
-    """从章节文件中提取正文内容（排除标题等元数据）"""
+    """Trích xuất nội dung chính từ file chương (loại bỏ tiêu đề metadata)"""
     content = file_path.read_text(encoding='utf-8')
     lines = content.split('\n')
 
     content_start = 0
     for i, line in enumerate(lines):
-        if line.startswith('#') and '章' in line:
+        if line.startswith('#') and 'Chương' in line:
             content_start = i + 1
             break
 
@@ -56,13 +62,13 @@ def check_chapter(file_path: str, min_words: int = 3000) -> dict:
         }
 
     main_content = extract_content_from_chapter(path)
-    word_count = count_chinese_words(main_content)
+    word_count = count_vietnamese_words(main_content)
     status = 'pass' if word_count >= min_words else 'fail'
-    message = f'字数: {word_count}'
+    message = f'Số từ: {word_count}'
     if word_count >= min_words:
-        message += ' (✓ 达标)'
+        message += ' (✓ đạt)'
     else:
-        message += f' (✗ 不足，需要至少 {min_words} 字)'
+        message += f' (✗ thiếu, cần tối thiểu {min_words} từ)'
 
     return {
         'file': str(path),
@@ -85,9 +91,9 @@ def check_all_chapters(directory: str, pattern: str = '第*.md', min_words: int 
 
 
 def print_results(results: list, min_words: int = 3000) -> None:
-    """打印检查结果"""
+    """In kết quả kiểm tra"""
     if not results:
-        print('没有找到章节文件')
+        print('Không tìm thấy file chương nào')
         return
 
     total_words = 0
@@ -95,7 +101,7 @@ def print_results(results: list, min_words: int = 3000) -> None:
     failed = 0
 
     print('\n' + '=' * 60)
-    print('章节字数检查报告')
+    print('BÁO CÁO KIỂM TRA SỐ TỪ')
     print('=' * 60)
 
     for result in results:
@@ -116,35 +122,35 @@ def print_results(results: list, min_words: int = 3000) -> None:
         print(f'   {result["message"]}')
 
     print('\n' + '-' * 60)
-    print(f'总计: {len(results)} 章 | {passed} 章达标 | {failed} 章不足 | 总字数: {total_words:,}')
+    print(f'Tổng: {len(results)} chương | {passed} chương đạt | {failed} chương thiếu | Tổng số từ: {total_words:,}')
     print('-' * 60)
 
     if failed > 0:
-        print(f'\n⚠️  有 {failed} 章内容不足 {min_words} 字，建议使用扩充技巧:')
-        print('   - 添加细节描写（环境、心理、动作）')
-        print('   - 增加对话场景')
-        print('   - 扩展人物内心活动')
-        print('   - 补充背景故事')
-        print('\n   参考: references/content-expansion.md')
+        print(f'\n⚠️  Có {failed} chương chưa đủ {min_words} từ, gợi ý mở rộng:')
+        print('   - Thêm miêu tả chi tiết (môi trường, tâm lý, hành động)')
+        print('   - Tăng cường đối thoại')
+        print('   - Mở rộng nội tâm nhân vật')
+        print('   - Bổ sung bối cảnh cốt truyện')
+        print('\n   Tham khảo: references/content-expansion.md')
 
 
 def main() -> None:
-    """主函数"""
+    """Hàm chính"""
     if len(sys.argv) < 2:
-        print('用法:')
-        print('  检查单个章节: python check_chapter_wordcount.py <章节文件路径> [最小字数]')
-        print('  检查所有章节: python check_chapter_wordcount.py --all <目录路径> [最小字数]')
+        print('Cách dùng:')
+        print('  Kiểm tra một chương: python check_chapter_wordcount.py <đường-dẫn-file> [số-từ-tối-thiểu]')
+        print('  Kiểm tra tất cả:     python check_chapter_wordcount.py --all <đường-dẫn-thư-mục> [số-từ-tối-thiểu]')
         print('')
-        print('示例:')
-        print('  python check_chapter_wordcount.py novels/故事/第01章.md')
-        print('  python check_chapter_wordcount.py novels/故事/第01章.md 3500')
-        print('  python check_chapter_wordcount.py --all novels/故事')
-        print('  python check_chapter_wordcount.py --all novels/故事 3500')
+        print('Ví dụ:')
+        print('  python check_chapter_wordcount.py novels/Chương01.md')
+        print('  python check_chapter_wordcount.py novels/Chương01.md 3500')
+        print('  python check_chapter_wordcount.py --all novels/')
+        print('  python check_chapter_wordcount.py --all novels/ 3500')
         return
 
     if sys.argv[1] == '--all':
         if len(sys.argv) < 3:
-            print('错误: 使用 --all 时需要指定目录路径')
+            print('Lỗi: cần đường dẫn thư mục khi dùng --all')
             return
         directory = sys.argv[2]
         min_words = int(sys.argv[3]) if len(sys.argv) > 3 else 3000

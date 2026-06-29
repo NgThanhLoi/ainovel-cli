@@ -1,10 +1,9 @@
-## 悬疑推理风格
+## Phong cách hồi hộp
 
-- **叙事结构**：多线叙事交织，信息差制造悬念，逐步揭示真相
-- **误导技法**：合理设置红鲱鱼（红herring），利用叙述视角盲区误导读者
-- **线索管理**：关键线索必须在揭示前至少出现两次，但不能太明显
-- **节奏控制**：紧张-舒缓交替，每章末留悬念钩子，高潮前适当减速蓄力
-- **氛围营造**：环境描写服务于紧张感，利用光影、声音、天气渲染不安
-- **人物行为**：角色的每个决策必须有动机支撑，避免"为了推动剧情而做蠢事"
-- **对话风格**：言外之意多于字面意思，审讯/对峙场景注重攻防节奏
-- **真相揭示**：不能靠巧合或未出现的证据，读者回看时能发现伏笔
+- **Nhịp độ thông tin**: kiểm soát nhịp phóng thích thông tin, trì hoãn đáp án thích hợp, duy trì cảm giác huyền bí
+- **Bầu không khí và cảm quan**: dùng môi trường, chi tiật cảm quan, từ ngữ tạo áp lực tâm lý
+- **Logic và phục bút**: manh mối phải logic, phục bút hợp lý, tránh "tháo thân" kiểu tác giả tự tiện
+- **Xây dựng hoài nghi**: khiến độc giả hoài nghi mọi nhân vật, nhưng khi chân tướng lộ ra phải thuyết phục
+- **Nhịp độ căng thẳng**: thấp thoáng cảm giác bất an thường trực, không nhất thiết mỗi chương đều kyck tính cao độ
+- **Đặc điểm nhân vật**: mỗi nhân vật khả nghi đều có động cơ và cơ hội, tránh bất ngờ vô căn cứ
+- **Giải quyết và hồi đáp**: đáp án cuối phải hồi đáp các phục bút, tạo cảm giác thoả mãn bất ngờ nhưng hợp lý

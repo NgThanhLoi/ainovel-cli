@@ -1,0 +1,100 @@
+# Reveal Ledger
+# Theo dõi các sự thật đã được hé lộ
+
+revealed_facts:
+  - fact: "Stormterror future danger hinted"
+    chapter: 1
+    certainty: "low"
+    confirmed_by_lore_research: true
+    public: true
+
+  - fact: "Unknown teaser fragment — figure in black fire (Lumine)"
+    chapter: 1
+    certainty: "low"
+    confirmed_by_lore_research: true
+    public: true
+
+  - fact: "Abyss Order controlling Dvalin"
+    chapter: 10
+    certainty: "medium"
+    confirmed_by_lore_research: true
+    public: false
+    known_by: "KoF, Aether"
+
+  - fact: "Venti là Phong Thần Barbatos"
+    chapter: 12
+    certainty: "high"
+    confirmed_by_lore_research: true
+    public: false
+
+  - fact: "Zhongli là Nham Vương Đế Quân"
+    chapter: 28
+    certainty: "medium"
+    confirmed_by_lore_research: true
+    public: false
+
+  - fact: "Zhongli giao Gnosis cho Fatui theo kế hoạch"
+    chapter: 35
+    certainty: "high"
+    confirmed_by_lore_research: true
+    public: false
+
+  - fact: "Khaenri'ah tồn tại — liên quan đến Kaeya và Albedo"
+    chapter: 39
+    certainty: "low"
+    confirmed_by_lore_research: true
+    public: false
+    notes: "Tầng 1 reveal — bóng ma, biểu tượng cánh chim hai đầu"
+
+  - fact: "Dainsleif xuất hiện, liên quan Khaenri'ah"
+    chapter: 39
+    certainty: "medium"
+    confirmed_by_lore_research: true
+    public: false
+
+  - fact: "Osial — Ma Thần bị trấn áp dưới Biển Đậm"
+    chapter: 36
+    certainty: "high"
+    confirmed_by_lore_research: true
+    public: true
+
+  - fact: "Ei là Lôi Thần, Makoto đã hy sinh"
+    chapter: 77
+    certainty: "high"
+    confirmed_by_lore_research: true
+    public: false
+
+unresolved_mysteries:
+  - mystery: "Who is the blonde figure in the burning sky?"
+    introduced: 1
+    planned_resolution_after: 100
+
+  - mystery: "Lumine's full motivation for joining Abyss"
+    introduced: 10
+    planned_resolution_after: 200
+
+  - mystery: "Full Khaenri'ah truth"
+    introduced: 39
+    planned_resolution_after: 180
+
+  - mystery: "Celestia's role in Cataclysm"
+    introduced: 50
+    planned_resolution_after: 300
+
+  - mystery: "Aether's sealed power/memory"
+    introduced: 45
+    planned_resolution_after: 200
+    notes: "(Không phải ký ức Khaenri'ah — là năng lực từ thế giới khác)"
+
+forbidden_until_later:
+  - item: "Full Lumine/Abyss motivation"
+    locked_until: 200
+
+  - item: "Full Khaenri'ah destruction details"
+    locked_until: 180
+
+  - item: "Celestia final truth"
+    locked_until: 300
+
+  - item: "Fontaine prophecy solution"
+    locked_until: 350

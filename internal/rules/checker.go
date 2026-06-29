@@ -3,7 +3,8 @@ package rules
 import (
 	"fmt"
 	"strings"
-	"unicode/utf8"
+
+	"github.com/voocel/ainovel-cli/internal/utils"
 )
 
 // Check 对章节正文按结构化规则进行机械检查，返回违规事实列表。
@@ -15,14 +16,14 @@ import (
 //
 // 参数：
 //   - text：章节正文（终稿或草稿都可）
-//   - wordCount：章节字数（rune 计数）。<0 时由 checker 自行计算，避免调用方重复 O(n) 扫描。
+//   - wordCount：章节字数 (số từ tiếng Việt). <0 时由 checker 自行计算，避免调用方重复 O(n) 扫描。
 //   - s：合并后的结构化规则；IsEmpty 时直接返回 nil。
 func Check(text string, wordCount int, s Structured) []Violation {
 	if s.IsEmpty() {
 		return nil
 	}
 	if wordCount < 0 {
-		wordCount = utf8.RuneCountInString(text)
+		wordCount = utils.CountVietnameseWords(text)
 	}
 
 	var violations []Violation

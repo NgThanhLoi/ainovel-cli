@@ -106,6 +106,8 @@ var knownRoles = map[string]bool{
 	"coordinator": true,
 	"architect":   true,
 	"writer":      true,
+	"planner":     true,
+	"drafter":     true,
 	"editor":      true,
 }
 

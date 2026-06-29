@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode"
 )
 
 // minChapters 少于此章数不出统计——样本太小，频率没有意义。
@@ -68,22 +69,31 @@ type TitleStat struct {
 	WithoutPrefix int `json:"without_prefix"`
 }
 
-// patternDefs 通用 AI 文风句式模式。计数是近似（正则不做语法分析），
-// 用途是本书自身的纵向基线对比，绝对精度不重要。
+// patternDefs AI 文风句式模式（中越双语）。
+// 计数是近似（正则不做语法分析），用途是本书自身的纵向基线对比。
 var patternDefs = []struct {
 	name string
 	re   *regexp.Regexp
 }{
+	// --- Chinese patterns (original) ---
 	{"矫正句『不是…(而)是…』", regexp.MustCompile(`不是[^。！？\n]{1,24}?[，、]?(?:而)?是`)},
 	{"计时量词『X息/X瞬』", regexp.MustCompile(`[一两二三四五六七八九十几数半][息瞬]`)},
 	{"明喻『像一/仿佛/如同/宛如』", regexp.MustCompile(`像一|仿佛|如同|宛如`)},
 	{"沉默节拍『沉默了/没有说话/没有回头』", regexp.MustCompile(`沉默了|没有说话|没有回头`)},
+
+	// --- Vietnamese patterns ---
+	{"Câu chữa『không phải…mà là…』", regexp.MustCompile(`không phải[^.!?\n]{1,30}?(?:,|\s)?mà(?: là|)`)},
+	{"Từ đệm『bỗng/chợt/đột nhiên/bỗng nhiên』", regexp.MustCompile(`\b(bỗng|chợt|đột nhiên|bỗng nhiên)\b`)},
+	{"Tỉ dụ『như…vậy/tựa như/khác nào』", regexp.MustCompile(`\b(như\s+\S{1,8}\s+(vậy|thế)|tựa như|khác nào|chẳng khác)\b`)},
+	{"Im lặng『im lặng/không nói gì/lặng lẽ』", regexp.MustCompile(`\b(im lặng|không nói gì|lặng lẽ)\b`)},
 }
 
 var (
-	sentenceSplit = regexp.MustCompile(`[。！？\n]+`)
-	openingTimeRe = regexp.MustCompile(`夜|清晨|黎明|天亮|醒来|晨光|一整夜`)
-	titlePrefixRe = regexp.MustCompile(`^#{0,2}\s*第[零〇一二三四五六七八九十百千万\d]+章`)
+	sentenceSplit = regexp.MustCompile(`[。！？\n.!?]+`)
+	// openingTimeRe hỗ trợ cả tiếng Trung và tiếng Việt
+	openingTimeRe = regexp.MustCompile(`夜|清晨|黎明|天亮|醒来|晨光|一整夜|sáng hôm|bình minh|tỉnh dậy|hoàng hôn|đêm|ban mai`)
+	// titlePrefixRe hỗ trợ cả "第N章" (CN) và "Chương N" (VN)
+	titlePrefixRe = regexp.MustCompile(`^#{0,2}\s*(?:第[零〇一二三四五六七八九十百千万\d]+章|Chương\s+\d+)`)
 )
 
 // shortEndingRunes 末行不超过此字数计为"短结尾"。
@@ -124,7 +134,7 @@ func recentWindow(chapters []string) []string {
 	return chapters[len(chapters)-phraseWindow:]
 }
 
-// minePhrases 在窗口内挖掘 3-6 字高频短语。
+// minePhrases 在窗口内挖掘 3-6 字高频短语（中文）或 5-15 字符高频片段（越南语）。
 // 过滤：含标点/空白、首尾虚词、命中专有名词；去重：与已选短语互为子串的丢弃。
 func minePhrases(chapters []string, stopwords []string) []PhraseStat {
 	text := strings.Join(chapters, "\n")
@@ -185,18 +195,49 @@ func minePhrases(chapters []string, stopwords []string) []PhraseStat {
 }
 
 // gramEdgeStop 首尾为这些虚词/代词的 n-gram 不是文风短语，跳过。
+// Hỗ trợ cả tiếng Trung (gốc) và tiếng Việt (bổ sung).
 const gramEdgeStop = "的了着是在和与就也都还又把被他她它我你这那"
 
+// vietnameseStopChars là các ký tự không nên đứng đầu/cuối phrase tiếng Việt
+const vietnameseStopChars = "vàlàcủacóđãđang sẽvớichođượcđểvẫn"
+
+// validGram chỉ chấp nhận cụm ký tự hợp lệ: CJK hoặc chữ cái Latin (Việt).
 func validGram(gram []rune) bool {
+	allCJK := true
+	allLetter := true
 	for _, r := range gram {
-		if r < 0x4E00 || r > 0x9FFF { // 仅纯汉字片段
-			return false
+		if r < 0x4E00 || r > 0x9FFF {
+			allCJK = false
+		}
+		if !unicode.IsLetter(r) {
+			allLetter = false
 		}
 	}
-	if strings.ContainsRune(gramEdgeStop, gram[0]) || strings.ContainsRune(gramEdgeStop, gram[len(gram)-1]) {
-		return false
+	if allCJK {
+		// Kiểm tra như cũ (tiếng Trung)
+		if strings.ContainsRune(gramEdgeStop, gram[0]) || strings.ContainsRune(gramEdgeStop, gram[len(gram)-1]) {
+			return false
+		}
+		return true
 	}
-	return true
+	if allLetter {
+		// Chữ cái Latin/Vietnamese — kiểm tra ký tự dừng
+		firstStr := string(gram[0])
+		lastStr := string(gram[len(gram)-1])
+		if strings.Contains(vietnameseStopChars, firstStr) || strings.Contains(vietnameseStopChars, lastStr) {
+			return false
+		}
+		// Cần ít nhất 1 nguyên âm có dấu hoặc chữ cái Latin cho VN
+		hasVowel := false
+		for _, r := range gram {
+			if r >= 0x0041 && r <= 0x007A || r >= 0x00C0 && r <= 0x00FF || r >= 0x0100 && r <= 0x017F || r >= 0x1EA0 && r <= 0x1EF9 {
+				hasVowel = true
+				break
+			}
+		}
+		return hasVowel
+	}
+	return false
 }
 
 // stopwordBigrams 把专有名词拆成 2 字片段：人名常以部分形式入文

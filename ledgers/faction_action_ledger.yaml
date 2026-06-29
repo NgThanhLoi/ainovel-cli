@@ -1,0 +1,59 @@
+# Faction Action Ledger
+factions:
+  KoF:
+    status: "active"
+    location: "Mondstadt"
+    current_goal: "Bảo vệ Mondstadt, chuẩn bị đối phó Stormterror"
+    recent_actions:
+      - "Họp khẩn sau Thiên Mạc (ch1)"
+      - "Chuẩn bị phòng thủ (ch5)"
+      - "Phối hợp Aether đối phó Dvalin (ch24)"
+    knownledge: "Biết Thiên Mạc tồn tại, Abyss kiểm soát Dvalin"
+
+  Fatui:
+    status: "active"
+    location: "đa quốc gia"
+    current_goal: "Thu thập Gnosis, kiểm soát thông tin Thiên Mạc"
+    recent_actions:
+      - "Mở hồ sơ quan sát Thiên Mạc (ch1)"
+      - "Kích hoạt kế hoạch Osial (ch36)"
+      - "Thu Gnosis từ Zhongli (ch37)"
+    knownledge: "Biết Thiên Mạc, theo dõi Aether, có Gnosis"
+
+  Liyue Qixing:
+    status: "active"
+    location: "Liyue"
+    current_goal: "Tái thiết sau Osial, quản lý thông tin"
+    recent_actions:
+      - "Triệu tập cấp cao sau Thiên Mạc (ch2)"
+      - "Đối phó Osial (ch36)"
+      - "Tái thiết cảng (ch40+)"
+    knownledge: "Biết Thiên Mạc, nghi ngờ thân phận Zhongli"
+
+  Abyss Order:
+    status: "active"
+    location: "Vực Thẳm"
+    current_goal: "Che giấu Lumine, chống Celestia"
+    recent_actions:
+      - "Ẩn sau Thiên Mạc (ch1-10)"
+      - "Kiểm soát Dvalin (ch10-27)"
+      - "Bảo vệ bí mật Khaenri'ah (ch39)"
+    knownledge: "Biết Thiên Mạc, biết Lumine là Công Chúa"
+
+  Inazuma Shogunate:
+    status: "changing"
+    location: "Inazuma"
+    current_goal: "Chuyển từ Vĩnh Hằng sang mở cửa"
+    recent_actions:
+      - "Ei rời Cõi U Sầu (ch77)"
+      - "Shogun chấp nhận đổi tên (ch78)"
+    knownledge: "Biết Thiên Mạc, Ei biết sự thật về Makoto"
+
+  Sumeru:
+    status: "observing"
+    location: "Sumeru"
+    current_goal: "Nghiên cứu Thiên Mạc"
+    recent_actions:
+      - "Học giả tranh luận (ch2)"
+      - "Nahida quan sát qua giấc mơ (ch59)"
+    knownledge: "Biết Thiên Mạc, đang phân loại thông tin"

@@ -3,7 +3,6 @@ package rules
 import (
 	"strings"
 	"testing"
-	"unicode/utf8"
 )
 
 // findViolation 在结果中按 rule + target 查找第一条违规。
@@ -179,8 +178,9 @@ func TestCheck_ChapterWordsSlightlyAbove(t *testing.T) {
 }
 
 func TestCheck_AutoWordCount(t *testing.T) {
-	// wordCount = -1 时由 checker 自行计算
-	text := strings.Repeat("汉", 2500) // 2500 个汉字
+	// wordCount = -1 时由 checker 自行计算 (đếm từ tiếng Việt)
+	// 2500 từ "tôi" cách nhau bởi space = 2500 words
+	text := strings.Repeat("tôi ", 2500) // 2500 từ "tôi"
 	rng := &WordRange{Min: 3000, Max: 6000}
 	vs := Check(text, -1, Structured{ChapterWords: rng})
 	if len(vs) != 1 || vs[0].Rule != "chapter_words" {
@@ -188,9 +188,6 @@ func TestCheck_AutoWordCount(t *testing.T) {
 	}
 	if vs[0].Actual != 2500 {
 		t.Errorf("auto wordCount=%v, want 2500", vs[0].Actual)
-	}
-	if vs[0].Actual != utf8.RuneCountInString(text) {
-		t.Errorf("auto count mismatch: %v vs rune count %d", vs[0].Actual, utf8.RuneCountInString(text))
 	}
 }
 

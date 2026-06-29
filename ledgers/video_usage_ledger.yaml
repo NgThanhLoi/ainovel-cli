@@ -1,0 +1,92 @@
+# Video Usage Ledger
+# Mỗi video chỉ dùng 1 lần trừ khi có flag replay/remix/follow_up
+
+videos:
+  - id: "teaser_001"
+    title: "Thiên Mạc teaser mở đầu"
+    type: "future_fragment"
+    chapters: [1]
+    replay: false
+    notes: "Teaser mơ hồ 20-30 giây — chỉ dùng 1 lần"
+
+  - id: "D01"
+    title: "Tây Phong Ngu Hí"
+    type: "comedy"
+    chapters: [3, 45]
+    replay: true
+    notes: "Xuất hiện lần 2 với remix angle"
+
+  - id: "D02"
+    title: "Video ship/hài"
+    type: "ship_tease"
+    chapters: [7]
+    replay: false
+
+  - id: "C01"
+    title: "PV Jean"
+    type: "character_pv"
+    chapters: [5]
+    replay: false
+
+  - id: "B01"
+    title: "Stormterror future fragment"
+    type: "future_fragment"
+    chapters: [4]
+    replay: false
+
+  - id: "C04"
+    title: "PV Zhongli"
+    type: "character_pv"
+    chapters: [28]
+    replay: false
+
+  - id: "C07"
+    title: "PV Ei"
+    type: "character_pv"
+    chapters: [77]
+    replay: false
+
+  - id: "A03"
+    title: "Diluc/Crepus quá khứ teaser"
+    type: "lore_item"
+    chapters: [8]
+    replay: false
+
+  - id: "A05"
+    title: "Zhongli & Guizhong quá khứ"
+    type: "lore_item"
+    chapters: [58]
+    replay: false
+
+  - id: "A01"
+    title: "Khaenri'ah 500 năm trước teaser"
+    type: "future_fragment"
+    chapters: [39]
+    replay: false
+    notes: "Tầng 1 reveal — chỉ bóng ma, không chi tiết"
+
+  - id: "A02"
+    title: "Stormterror tấn công"
+    type: "future_fragment"
+    chapters: [24]
+    replay: false
+
+  - id: "D06"
+    title: "Traveler ship edit — light misunderstanding"
+    type: "ship_tease"
+    chapters: [50]
+    replay: false
+
+pending_videos:
+  - "B02": "Liyue Golden House fragment"
+  - "B03": "Inazuma Vision Hunt fragment"
+  - "B04": "Fontaine prophecy water fragment"
+  - "B05": "Fatui Gnosis collection"
+  - "C02": "PV Diluc"
+  - "C03": "PV Venti"
+  - "C05": "PV Xiao"
+  - "C06": "PV Ningguang"
+  - "C08": "PV Scaramouche"
+  - "D03": "Danh cảnh Genshin"
+  - "D04": "Dottore meme"
+  - "D05": "Zhongli meme"
