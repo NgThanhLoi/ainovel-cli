@@ -30,6 +30,7 @@ type Prompts struct {
 	Planner          string
 	Drafter          string
 	Editor           string
+	CanonSafeguards  string
 	ImportFoundation string
 	ImportAnalyzer   string
 	SimulationSource string
@@ -109,6 +110,7 @@ func loadPrompts() Prompts {
 		ImportAnalyzer:   mustRead(promptsFS, "prompts/import-chapter-analyzer.md"),
 		SimulationSource: mustRead(promptsFS, "prompts/simulation-source.md"),
 		SimulationMerge:  mustRead(promptsFS, "prompts/simulation-merge.md"),
+		CanonSafeguards:  mustRead(promptsFS, "prompts/canon-safeguards.md"),
 	}
 }
 

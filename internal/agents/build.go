@@ -190,11 +190,38 @@ func BuildCoordinator(
 		return reminder.NewArchitectStopGuard(store)
 	}
 	architectThinking := roleThinking(cfg, "architect")
+	architectShortPrompt := bundle.Prompts.ArchitectShort
+	if bundle.Prompts.CanonSafeguards != "" {
+		architectShortPrompt += "\n\n" + bundle.Prompts.CanonSafeguards
+	}
+
+	architectLongPrompt := bundle.Prompts.ArchitectLong
+	if bundle.Prompts.CanonSafeguards != "" {
+		architectLongPrompt += "\n\n" + bundle.Prompts.CanonSafeguards
+	}
+
+	// ── Canon Safeguards Loading Log ────────────────────────────────────
+	csLen := len(bundle.Prompts.CanonSafeguards)
+	if csLen > 0 {
+		csHash := fmt.Sprintf("%x", []byte(bundle.Prompts.CanonSafeguards)[:min(csLen, 32)])
+		slog.Info("canon safeguards loaded",
+			"source", "assets/prompts/canon-safeguards.md",
+			"bytes", csLen,
+			"hash_prefix", csHash,
+			"agents", "coordinator,writer,drafter,editor,architect_short,architect_long,planner",
+		)
+	} else {
+		slog.Warn("canon safeguards NOT loaded — file is empty or missing",
+			"source", "assets/prompts/canon-safeguards.md",
+		)
+	}
+	// ─────────────────────────────────────────────────────────────────────
+
 	architectShort := subagent.Config{
 		Name:               "architect_short",
 		Description:        "短篇规划师：为单卷、单冲突、高密度故事生成紧凑设定与扁平大纲",
 		Model:              architectModel,
-		SystemPrompt:       bundle.Prompts.ArchitectShort,
+		SystemPrompt:       architectShortPrompt,
 		Tools:              architectTools,
 		MaxTurns:           15,
 		MaxRetries:         subagentMaxRetries,
@@ -211,7 +238,7 @@ func BuildCoordinator(
 		Name:               "architect_long",
 		Description:        "长篇规划师：为连载型、可持续升级的故事生成分层设定与卷弧大纲",
 		Model:              architectModel,
-		SystemPrompt:       bundle.Prompts.ArchitectLong,
+		SystemPrompt:       architectLongPrompt,
 		Tools:              architectTools,
 		MaxTurns:           20,
 		MaxRetries:         subagentMaxRetries,
@@ -230,9 +257,17 @@ func BuildCoordinator(
 		StopGuardFactory: architectStopGuardFactory,
 	}
 
+	coordinatorPrompt := bundle.Prompts.Coordinator
+	if bundle.Prompts.CanonSafeguards != "" {
+		coordinatorPrompt += "\n\n" + bundle.Prompts.CanonSafeguards
+	}
+
 	writerPrompt := bundle.Prompts.Writer
 	if style, ok := bundle.Styles[cfg.Style]; ok {
 		writerPrompt += "\n\n" + style
+	}
+	if bundle.Prompts.CanonSafeguards != "" {
+		writerPrompt += "\n\n" + bundle.Prompts.CanonSafeguards
 	}
 
 	restore := &ctxpack.WriterRestorePack{}
@@ -283,11 +318,15 @@ func BuildCoordinator(
 		},
 	}
 
+	editorPrompt := bundle.Prompts.Editor
+	if bundle.Prompts.CanonSafeguards != "" {
+		editorPrompt += "\n\n" + bundle.Prompts.CanonSafeguards
+	}
 	editor := subagent.Config{
 		Name:               "editor",
 		Description:        "审阅者：阅读原文，从结构和审美两个层面发现问题",
 		Model:              editorModel,
-		SystemPrompt:       bundle.Prompts.Editor,
+		SystemPrompt:       editorPrompt,
 		Tools:              editorTools,
 		MaxTurns:           20,
 		MaxRetries:         subagentMaxRetries,
@@ -310,6 +349,9 @@ func BuildCoordinator(
 	if style, ok := bundle.Styles[cfg.Style]; ok {
 		drafterPrompt += "\n\n" + style
 	}
+	if bundle.Prompts.CanonSafeguards != "" {
+		drafterPrompt += "\n\n" + bundle.Prompts.CanonSafeguards
+	}
 
 	drafter := subagent.Config{
 		Name:               "drafter",
@@ -328,6 +370,9 @@ func BuildCoordinator(
 	plannerPrompt := bundle.Prompts.Planner
 	if style, ok := bundle.Styles[cfg.Style]; ok {
 		plannerPrompt += "\n\n" + style
+	}
+	if bundle.Prompts.CanonSafeguards != "" {
+		plannerPrompt += "\n\n" + bundle.Prompts.CanonSafeguards
 	}
 	planner := subagent.Config{
 		Name:               "planner",
@@ -356,7 +401,7 @@ func BuildCoordinator(
 
 	agent := agentcore.NewAgent(
 		agentcore.WithModel(coordinatorModel),
-		agentcore.WithSystemPrompt(bundle.Prompts.Coordinator),
+		agentcore.WithSystemPrompt(coordinatorPrompt),
 		agentcore.WithTools(subagentTool, contextTool, tools.NewSaveDirectiveTool(store),
 			tools.NewReopenBookTool(store)),
 		agentcore.WithMaxTurns(100_000),
