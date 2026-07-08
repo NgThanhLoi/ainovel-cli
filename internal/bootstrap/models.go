@@ -84,6 +84,13 @@ func (m *SwappableModel) Info() llm.ModelInfo {
 	}
 }
 
+func (m *SwappableModel) Capabilities() llm.Capabilities {
+	if cp, ok := m.SwappableModel.Current().(llm.CapabilityProvider); ok {
+		return cp.Capabilities()
+	}
+	return llm.Capabilities{}
+}
+
 func (m *SwappableModel) Swap(provider, name string, model agentcore.ChatModel) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -269,12 +276,19 @@ func createModelFromConfig(providerKey, model string, pc ProviderConfig, cache m
 	if err != nil {
 		return nil, fmt.Errorf("解析 provider 类型失败: %w", err)
 	}
+	providerExtra := cloneMap(pc.Extra)
+	if pc.API != "" {
+		if providerExtra == nil {
+			providerExtra = make(map[string]any, 1)
+		}
+		providerExtra["api"] = pc.API
+	}
 
 	m, err := llm.NewModel(providerType, model,
 		llm.WithAPIKey(pc.APIKey),
 		llm.WithBaseURL(pc.BaseURL),
 		llm.WithStreamIdleTimeout(streamIdleTimeout),
-		llm.WithProviderExtra(pc.Extra),
+		llm.WithProviderExtra(providerExtra),
 		llm.WithExtra(pc.ExtraBody),
 	)
 	if err != nil {

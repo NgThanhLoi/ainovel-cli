@@ -210,6 +210,7 @@ type RunMeta struct {
 	PlanningTier PlanningTier `json:"planning_tier,omitempty"`
 	SteerHistory []SteerEntry `json:"steer_history,omitempty"`
 	PendingSteer string       `json:"pending_steer,omitempty"` // 未完成的 Steer 指令，中断恢复时重新注入
+	PausePoint   *PausePoint  `json:"pause_point,omitempty"`   // 用户预约的验收停靠点，Host 边界消费
 }
 
 // SteerEntry 用户干预记录。
@@ -218,16 +219,13 @@ type SteerEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// UserDirective 用户下达的长效创作要求，跨章节持续生效。
-// 持久化到 meta/user_directives.json，由 novel_context 注入
-// working_memory.user_directives 供所有子代理遵守。
-//
-// Chapter/TotalChapters 是下达时的进度快照：让指令有明确的生效起点（不追溯
-// 之前的章节），也让误存的相对式指令（如"增加10章"）可被读取方判定为已满足，
-// 而不是每次重读都再执行一次。
-type UserDirective struct {
-	Text          string `json:"text"`
-	Chapter       int    `json:"chapter"`        // 下达时的写作进度
-	TotalChapters int    `json:"total_chapters"` // 下达时的规划总章数
-	CreatedAt     string `json:"created_at"`     // RFC3339
+// PauseAfterRewritesDrained 停靠点条件：重写队列排空后暂停。
+const PauseAfterRewritesDrained = "rewrites_drained"
+
+// PausePoint 用户停靠点：用户级运行意图（非创作事实），由 Coordinator 裁定
+// 干预意图后经工具落盘，Host 在流程边界查表消费，一次性。
+type PausePoint struct {
+	After  string `json:"after"`            // 触发条件，见 PauseAfter* 常量
+	Reason string `json:"reason,omitempty"` // 用户诉求摘要，用于暂停事件文案
+	SetAt  string `json:"set_at,omitempty"`
 }

@@ -18,19 +18,11 @@ import (
 
 // CommitChapterTool 提交章节：加载正文 → 保存终稿 → 生成摘要 → 更新状态 → 更新进度。
 type CommitChapterTool struct {
-	store     *store.Store
-	rulesOpts rules.LoadOptions // 可选；空 LoadOptions 时不产生 rule_violations
+	store *store.Store
 }
 
 func NewCommitChapterTool(store *store.Store) *CommitChapterTool {
 	return &CommitChapterTool{store: store}
-}
-
-// WithRules 注入用户规则加载选项，使 rule_violations 中附带用户规则检查结果。
-// 不调用此方法时仅执行内置底线 Lint（机制残留检查，始终开启）。
-func (t *CommitChapterTool) WithRules(opts rules.LoadOptions) *CommitChapterTool {
-	t.rulesOpts = opts
-	return t
 }
 
 // commitOutput 在 domain.CommitResult 之上嵌入扩展字段，保持 domain 包不依赖 rules。
@@ -78,6 +70,7 @@ func (t *CommitChapterTool) Schema() map[string]any {
 		schema.Property("deviation", schema.String("偏离大纲的描述")).Required(),
 		schema.Property("suggestion", schema.String("对后续大纲的调整建议")).Required(),
 	)
+	feedbackSchema["description"] = "对后续大纲的建议对象；必须直接传 JSON object，不要传字符串化 JSON"
 	return schema.Object(
 		schema.Property("chapter", schema.Int("章节号")).Required(),
 		schema.Property("summary", schema.String("本章内容摘要（200字以内）")).Required(),
@@ -121,6 +114,9 @@ func (t *CommitChapterTool) Execute(_ context.Context, args json.RawMessage) (js
 	if t.store.Progress.IsChapterCompleted(a.Chapter) {
 		// 清理可能残留的 PendingCommit（崩溃发生在 ProgressMarked 之后、ClearPendingCommit 之前）
 		if pending, _ := t.store.Signals.LoadPendingCommit(); pending != nil && pending.Chapter == a.Chapter {
+			if err := t.appendCommitCheckpoint(a.Chapter); err != nil {
+				return nil, fmt.Errorf("checkpoint commit: %w: %w", errs.ErrStoreWrite, err)
+			}
 			_ = t.store.Signals.ClearPendingCommit()
 		}
 		// 打磨/重写路径：章节虽已完成，但仍在 pending_rewrites 中，允许覆盖并 drain 队列
@@ -321,7 +317,13 @@ func (t *CommitChapterTool) Execute(_ context.Context, args json.RawMessage) (js
 		return nil, fmt.Errorf("update pending commit result: %w: %w", errs.ErrStoreWrite, err)
 	}
 
-	// 9. 清除进度中间状态
+	// 9. 追加 checkpoint。必须先于清除 pending_commit，确保重启后可见的
+	// pending_commit 总能驱动重跑补齐缺失 checkpoint。
+	if err := t.appendCommitCheckpoint(a.Chapter); err != nil {
+		return nil, fmt.Errorf("checkpoint commit: %w: %w", errs.ErrStoreWrite, err)
+	}
+
+	// 10. 清除进度中间状态
 	if err := t.store.Progress.ClearInProgress(); err != nil {
 		return nil, fmt.Errorf("clear in-progress: %w: %w", errs.ErrStoreWrite, err)
 	}
@@ -329,25 +331,28 @@ func (t *CommitChapterTool) Execute(_ context.Context, args json.RawMessage) (js
 		return nil, fmt.Errorf("clear pending commit: %w: %w", errs.ErrStoreWrite, err)
 	}
 
-	// 10. 追加 checkpoint
-	if _, err := t.store.Checkpoints.AppendArtifact(
-		domain.ChapterScope(a.Chapter), "commit",
-		fmt.Sprintf("chapters/%02d.md", a.Chapter),
-	); err != nil {
-		return nil, fmt.Errorf("checkpoint commit: %w: %w", errs.ErrStoreWrite, err)
-	}
-
 	// 11. 机械规则检查（仅返事实，不阻断）
 	violations := t.checkRules(content, wordCount)
 	return json.Marshal(commitOutput{CommitResult: result, RuleViolations: violations})
 }
 
+func (t *CommitChapterTool) appendCommitCheckpoint(chapter int) error {
+	_, err := t.store.Checkpoints.AppendArtifact(
+		domain.ChapterScope(chapter), "commit",
+		fmt.Sprintf("chapters/%02d.md", chapter),
+	)
+	return err
+}
+
 // checkRules 对章节正文做机械检查：内置产品底线 Lint（机制残留，始终执行）
-// + 用户规则 Check（rulesOpts 全空时 loader 返回空 layers，checker 返 nil）。
+// + 用户规则 Check（读本书快照的 structured；快照缺失退到内置默认，保证机械底线始终在）。
 func (t *CommitChapterTool) checkRules(text string, wordCount int) []rules.Violation {
 	violations := rules.Lint(text)
-	bundle := rules.Merge(rules.Load(t.rulesOpts))
-	return append(violations, rules.Check(text, wordCount, bundle.Structured)...)
+	structured := rules.SystemDefaults().Structured
+	if snap, err := t.store.UserRules.Load(); err == nil && snap != nil {
+		structured = snap.Structured
+	}
+	return append(violations, rules.Check(text, wordCount, structured)...)
 }
 
 // executeRewriteCommit 处理打磨/重写章节的提交：覆盖终稿与摘要、更新字数、drain 队列。
@@ -431,7 +436,7 @@ func (t *CommitChapterTool) executeRewriteCommit(
 	drained := len(remaining) == 0
 
 	// 队列清空后再判完结：返工提交不经过主路径 applyCompletion，完结只能在此触发。
-	//   - 分层 + 正向写作：用质量级 layeredBookComplete（要求线索收束），未满足让位架构师。
+	//   - 分层 + 正向写作：layeredComplete 总判定（收官卷结构写完 / 未宣告走质量级）。
 	//   - 分层 + reopen 返工（ReopenedFromComplete）：返工只改已有章、不增减结构，按结构完整
 	//     即重新完结——若因返工扰动了某条线索就卡在 writing，终卷末会落到越界续写死循环。
 	//   - 非分层：写满 TotalChapters 即完结（返工不增减章数，原本就满）。
@@ -440,9 +445,9 @@ func (t *CommitChapterTool) executeRewriteCommit(
 		reComplete := false
 		switch {
 		case latest.Layered && latest.ReopenedFromComplete:
-			reComplete = t.layeredStructurallyComplete(latest)
+			reComplete = layeredStructurallyComplete(t.store, latest)
 		case latest.Layered:
-			reComplete = t.layeredBookComplete(latest)
+			reComplete = layeredComplete(t.store, latest)
 		default:
 			reComplete = latest.TotalChapters > 0 && len(latest.CompletedChapters) >= latest.TotalChapters
 		}
@@ -535,15 +540,15 @@ func loadCoreCharacterNameSet(s *store.Store) map[string]bool {
 // applyCompletion 判断本次 commit 是否使全书完结，若是则 MarkComplete 并返回 true。
 //   - 非分层：写完约定总章数即完结。
 //   - 分层：架构师显式 save_foundation type=complete_book 是主路径；这里再加一道
-//     确定性兜底——当全书已客观满足完结条件（见 layeredBookComplete）时自动收尾。
-//     防止模型在终点既不 append_volume 也不 complete_book，导致"写手裸跑越界章节 →
-//     越界守卫拦截 → 反复重试"的 livelock（《凡骨》ch204..347 案例的根因）。
+//     确定性兜底（见 layeredComplete）——防止模型在终点既不 append_volume 也不
+//     complete_book，导致"写手裸跑越界章节 → 越界守卫拦截 → 反复重试"的 livelock
+//     （《凡骨》ch204..347 案例的根因）。
 func (t *CommitChapterTool) applyCompletion(result *domain.CommitResult, progress *domain.Progress) bool {
 	if progress == nil {
 		return false
 	}
 	if progress.Layered {
-		if t.layeredBookComplete(progress) {
+		if layeredComplete(t.store, progress) {
 			_ = t.store.Progress.MarkComplete()
 			return true
 		}
@@ -556,15 +561,22 @@ func (t *CommitChapterTool) applyCompletion(result *domain.CommitResult, progres
 	return false
 }
 
+// ── 分层完结判定（包级：commit_chapter 与 save_volume_summary 两个触发点共用）──
+//
+// 完结检查永远发生在"最后一块事实落地"的工具里：
+//   - 未宣告收官：末章 commit（layeredBookComplete 质量级）
+//   - 已宣告收官：正向主路径的最后一块拼图是卷末收尾三连（评审→弧摘要→卷摘要），
+//     故触发点在 save_volume_summary；返工 drain 后三连已齐时由 commit 触发。
+
 // layeredStructurallyComplete 判定分层长篇是否"结构上写完"：返工队列空 + 无骨架弧待展开
 // + 所有已展开章节都已写。这是确定性的终态事实，不含伏笔/长线等语义判断——用作"防终态
 // 死循环"的安全网（返工排空后据此重新完结）。
-func (t *CommitChapterTool) layeredStructurallyComplete(progress *domain.Progress) bool {
+func layeredStructurallyComplete(st *store.Store, progress *domain.Progress) bool {
 	// 1. 返工队列必须清空
 	if len(progress.PendingRewrites) > 0 {
 		return false
 	}
-	volumes, err := t.store.Outline.LoadLayeredOutline()
+	volumes, err := st.Outline.LoadLayeredOutline()
 	if err != nil || len(volumes) == 0 {
 		return false
 	}
@@ -581,20 +593,51 @@ func (t *CommitChapterTool) layeredStructurallyComplete(progress *domain.Progres
 	return expanded > 0 && len(progress.CompletedChapters) >= expanded
 }
 
+// finaleWrapped 收官卷的卷末收尾三连（弧评审/弧摘要/卷摘要）是否齐备。
+// 收官完结不要求伏笔/长线归零，但必须等末弧过完编辑质量闸——结局是全书最要紧的部分，
+// 完结不能抢在 editor 评审（可能入队返工）与摘要落盘之前。
+func finaleWrapped(st *store.Store, progress *domain.Progress) bool {
+	last := progress.LatestCompleted()
+	if last <= 0 {
+		return false
+	}
+	b, err := st.Outline.CheckArcBoundary(last)
+	if err != nil || b == nil || !b.IsArcEnd {
+		return false
+	}
+	return st.World.HasArcReview(last) &&
+		st.Summaries.HasArcSummary(b.Volume, b.Arc) &&
+		st.Summaries.HasVolumeSummary(b.Volume)
+}
+
+// layeredComplete 分层正向写作的完结总判定：
+//   - 已宣告收官卷（layered_outline 最后一卷带 final）→ 结构写完 + 卷末收尾三连齐备
+//     即完结，不再要求伏笔/长线归零。收官卷整卷以收线为目标（架构师规划时已把长线/
+//     伏笔分配进各弧），个别遗漏属编辑质量问题，不该把全书卡在终态之外——否则
+//     estimated_scale 高估的书永远无法合法完本（140 章 stop guard 熔断案例的根因侧）。
+//   - 未宣告 → 质量级 layeredBookComplete，防模型既不收官也不完本时在大纲耗尽处
+//     过早收尾。
+func layeredComplete(st *store.Store, progress *domain.Progress) bool {
+	if volumes, err := st.Outline.LoadLayeredOutline(); err == nil && domain.FinaleVolume(volumes) > 0 {
+		return layeredStructurallyComplete(st, progress) && finaleWrapped(st, progress)
+	}
+	return layeredBookComplete(st, progress)
+}
+
 // layeredBookComplete 用客观事实判断分层长篇是否真正写完，对照 architect-long.md 完结判定
 // 清单里可量化的几项 + 结构性事实。结构完整之上再要求伏笔归零、长线收束——任一不满足都
 // 让位给架构师继续 expand_arc / append_volume，绝不抢在故事没写完时收尾。无 compass 时保守
-// 判为未完结。这是正向写作的"质量级"完结判定，比 layeredStructurallyComplete 更严。
-func (t *CommitChapterTool) layeredBookComplete(progress *domain.Progress) bool {
-	if !t.layeredStructurallyComplete(progress) {
+// 判为未完结。这是未宣告收官卷时的"质量级"完结判定，比 layeredStructurallyComplete 更严。
+func layeredBookComplete(st *store.Store, progress *domain.Progress) bool {
+	if !layeredStructurallyComplete(st, progress) {
 		return false
 	}
 	// 4. 活跃伏笔必须归零（承诺已兑现）
-	if active, aerr := t.store.World.LoadActiveForeshadow(); aerr != nil || len(active) > 0 {
+	if active, aerr := st.World.LoadActiveForeshadow(); aerr != nil || len(active) > 0 {
 		return false
 	}
 	// 5. 指南针活跃长线必须收束（无 compass / 长线未清都交回架构师裁定）
-	compass, cerr := t.store.Outline.LoadCompass()
+	compass, cerr := st.Outline.LoadCompass()
 	if cerr != nil || compass == nil || len(compass.OpenThreads) > 0 {
 		return false
 	}

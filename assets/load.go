@@ -3,7 +3,6 @@ package assets
 import (
 	"embed"
 	"fmt"
-	"io/fs"
 	"strings"
 
 	"github.com/voocel/ainovel-cli/internal/tools"
@@ -17,9 +16,6 @@ var referencesFS embed.FS
 
 //go:embed styles/*.md
 var stylesFS embed.FS
-
-//go:embed rules
-var rulesFS embed.FS
 
 // Prompts 表示嵌入的提示词集合。
 type Prompts struct {
@@ -42,9 +38,6 @@ type Bundle struct {
 	References tools.References
 	Prompts    Prompts
 	Styles     map[string]string
-	// RulesFS 是 assets/rules 子树（根目录直接包含 default.md）。
-	// 调用方传给 rules.Load 作为内置规则来源。
-	RulesFS fs.FS
 }
 
 // Load 返回指定风格对应的资源集合。
@@ -53,18 +46,7 @@ func Load(style string) Bundle {
 		References: loadReferences(style),
 		Prompts:    loadPrompts(),
 		Styles:     loadStyles(),
-		RulesFS:    loadRulesFS(),
 	}
-}
-
-// loadRulesFS 返回 assets/rules 的子文件系统；根目录直接包含 default.md。
-// fs.Sub 失败时（理论不应发生）返回 nil，rules.Load 据此跳过内置来源。
-func loadRulesFS() fs.FS {
-	sub, err := fs.Sub(rulesFS, "rules")
-	if err != nil {
-		return nil
-	}
-	return sub
 }
 
 func loadReferences(style string) tools.References {
@@ -99,13 +81,13 @@ func loadReferences(style string) tools.References {
 
 func loadPrompts() Prompts {
 	return Prompts{
-		Coordinator:      withSimulationGuidance(mustRead(promptsFS, "prompts/coordinator.md"), "coordinator"),
-		ArchitectShort:   withSimulationGuidance(mustRead(promptsFS, "prompts/architect-short.md"), "architect"),
-		ArchitectLong:    withSimulationGuidance(mustRead(promptsFS, "prompts/architect-long.md"), "architect"),
-		Writer:           withSimulationGuidance(mustRead(promptsFS, "prompts/writer.md"), "writer"),
-		Planner:           withSimulationGuidance(mustRead(promptsFS, "prompts/planner.md"), "writer"),
-		Drafter:          withSimulationGuidance(mustRead(promptsFS, "prompts/drafter.md"), "writer"),
-		Editor:           withSimulationGuidance(mustRead(promptsFS, "prompts/editor.md"), "editor"),
+		Coordinator:      WithSimulationGuidance(mustRead(promptsFS, "prompts/coordinator.md"), "coordinator"),
+		ArchitectShort:   WithSimulationGuidance(mustRead(promptsFS, "prompts/architect-short.md"), "architect"),
+		ArchitectLong:    WithSimulationGuidance(mustRead(promptsFS, "prompts/architect-long.md"), "architect"),
+		Writer:           WithSimulationGuidance(mustRead(promptsFS, "prompts/writer.md"), "writer"),
+		Planner:          WithSimulationGuidance(mustRead(promptsFS, "prompts/planner.md"), "writer"),
+		Drafter:          WithSimulationGuidance(mustRead(promptsFS, "prompts/drafter.md"), "writer"),
+		Editor:           WithSimulationGuidance(mustRead(promptsFS, "prompts/editor.md"), "editor"),
 		ImportFoundation: mustRead(promptsFS, "prompts/import-foundation.md"),
 		ImportAnalyzer:   mustRead(promptsFS, "prompts/import-chapter-analyzer.md"),
 		SimulationSource: mustRead(promptsFS, "prompts/simulation-source.md"),
@@ -114,8 +96,43 @@ func loadPrompts() Prompts {
 	}
 }
 
-func withSimulationGuidance(prompt, role string) string {
+// WithSimulationGuidance 给核心 prompt 追加仿写画像指引。导出供 eval 等外部场景做
+// variant 覆盖时复用，保证覆盖后的 prompt 与 Load 产出的 baseline 等价（同一包装路径）。
+func WithSimulationGuidance(prompt, role string) string {
 	return prompt + "\n\n" + strings.ReplaceAll(simulationGuidance, "{{role}}", role)
+}
+
+// OverridePrompt 用 raw 覆盖 bundle 中指定 prompt 文件对应的角色提示词，并走与 Load
+// 完全相同的 WithSimulationGuidance 包装——eval 做 A/B 时只需调它，不必复制包装逻辑，
+// 否则 baseline 带仿写画像后缀、variant 不带，A/B 不等价。file 为 prompt 文件名。
+func (b *Bundle) OverridePrompt(file, raw string) error {
+	role, ok := promptRole[file]
+	if !ok {
+		return fmt.Errorf("不支持覆盖的 prompt 文件: %s（仅核心提示词可覆盖）", file)
+	}
+	wrapped := WithSimulationGuidance(raw, role)
+	switch file {
+	case "coordinator.md":
+		b.Prompts.Coordinator = wrapped
+	case "architect-short.md":
+		b.Prompts.ArchitectShort = wrapped
+	case "architect-long.md":
+		b.Prompts.ArchitectLong = wrapped
+	case "writer.md":
+		b.Prompts.Writer = wrapped
+	case "editor.md":
+		b.Prompts.Editor = wrapped
+	}
+	return nil
+}
+
+// promptRole 把核心 prompt 文件名映射到 simulation guidance 的角色占位符。
+var promptRole = map[string]string{
+	"coordinator.md":     "coordinator",
+	"architect-short.md": "architect",
+	"architect-long.md":  "architect",
+	"writer.md":          "writer",
+	"editor.md":          "editor",
 }
 
 const simulationGuidance = `## 仿写画像

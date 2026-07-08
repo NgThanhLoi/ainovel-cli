@@ -6,8 +6,18 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/voocel/ainovel-cli/internal/host"
+	"github.com/voocel/agentcore"
 )
+
+type modelRuntime interface {
+	ConfiguredProviders() []string
+	ConfiguredModels(provider string) []string
+	CurrentModelSelection(role string) (string, string, bool)
+	AvailableThinking(role string) []agentcore.ThinkingLevel
+	CurrentThinking(role string) string
+	SwitchModel(role, provider, model string) error
+	SetRoleThinking(role, level string) error
+}
 
 type modelSwitchFocus int
 
@@ -31,22 +41,42 @@ var modelRoleOptions = []modelRoleOption{
 	{Key: "editor", Label: "Editor"},
 }
 
-// thinkingOptions 是 /model 面板可选的思考强度档位。Key 为 agentcore 档位值。
-// 空 = 继承（不发 thinking，沿用模型/provider 默认）；off = 显式关闭思考（对默认
-// 就思考的模型如 GLM-5.x/deepseek-reasoner 才有意义，支持的 provider 会下发 disabled）。
-var thinkingOptions = []struct{ Key, Label string }{
+type thinkingOption struct{ Key, Label string }
+
+var allThinkingOptions = []thinkingOption{
 	{"", "默认(继承)"},
 	{"off", "关闭"},
-	{"minimal", "最小"},
 	{"low", "低"},
 	{"medium", "中"},
 	{"high", "高"},
 	{"xhigh", "极高"},
+	{"max", "最高"},
 }
 
-func thinkingIndexOf(level string) int {
+func thinkingOptionsFor(rt modelRuntime, role string) []thinkingOption {
+	levels := rt.AvailableThinking(role)
+	if len(levels) == 0 {
+		return []thinkingOption{allThinkingOptions[0]}
+	}
+	out := make([]thinkingOption, 0, len(levels))
+	for _, level := range levels {
+		key := string(level)
+		for _, option := range allThinkingOptions {
+			if option.Key == key {
+				out = append(out, option)
+				break
+			}
+		}
+	}
+	if len(out) == 0 {
+		return []thinkingOption{allThinkingOptions[0]}
+	}
+	return out
+}
+
+func thinkingIndexOf(options []thinkingOption, level string) int {
 	level = strings.ToLower(strings.TrimSpace(level))
-	for i, o := range thinkingOptions {
+	for i, o := range options {
 		if o.Key == level {
 			return i
 		}
@@ -62,10 +92,11 @@ type modelSwitchState struct {
 	thinkingIdx int
 	providers   []string
 	models      []string
+	thinking    []thinkingOption
 	message     string
 }
 
-func newModelSwitchState(rt *host.Host, roleHint string) *modelSwitchState {
+func newModelSwitchState(rt modelRuntime, roleHint string) *modelSwitchState {
 	state := &modelSwitchState{
 		providers: rt.ConfiguredProviders(),
 	}
@@ -118,17 +149,17 @@ func (s *modelSwitchState) model() string {
 }
 
 func (s *modelSwitchState) thinkingKey() string {
-	if s.thinkingIdx < 0 || s.thinkingIdx >= len(thinkingOptions) {
+	if s.thinkingIdx < 0 || s.thinkingIdx >= len(s.thinking) {
 		return ""
 	}
-	return thinkingOptions[s.thinkingIdx].Key
+	return s.thinking[s.thinkingIdx].Key
 }
 
 func (s *modelSwitchState) thinkingLabel() string {
-	if s.thinkingIdx < 0 || s.thinkingIdx >= len(thinkingOptions) {
-		return thinkingOptions[0].Label
+	if s.thinkingIdx < 0 || s.thinkingIdx >= len(s.thinking) {
+		return allThinkingOptions[0].Label
 	}
-	return thinkingOptions[s.thinkingIdx].Label
+	return s.thinking[s.thinkingIdx].Label
 }
 
 func (s *modelSwitchState) moveFocus(delta int) {
@@ -136,7 +167,7 @@ func (s *modelSwitchState) moveFocus(delta int) {
 	s.focus = modelSwitchFocus((int(s.focus) + delta + total) % total)
 }
 
-func (s *modelSwitchState) cycle(delta int, rt *host.Host) {
+func (s *modelSwitchState) cycle(delta int, rt modelRuntime) {
 	switch s.focus {
 	case modelFocusRole:
 		total := len(modelRoleOptions)
@@ -156,12 +187,15 @@ func (s *modelSwitchState) cycle(delta int, rt *host.Host) {
 		total := len(s.models)
 		s.modelIdx = (s.modelIdx + delta + total) % total
 	case modelFocusThinking:
-		total := len(thinkingOptions)
+		total := len(s.thinking)
+		if total == 0 {
+			return
+		}
 		s.thinkingIdx = (s.thinkingIdx + delta + total) % total
 	}
 }
 
-func (s *modelSwitchState) syncSelection(rt *host.Host) {
+func (s *modelSwitchState) syncSelection(rt modelRuntime) {
 	provider, model, _ := rt.CurrentModelSelection(s.role())
 	if len(s.providers) > 0 {
 		s.providerIdx = 0
@@ -173,11 +207,11 @@ func (s *modelSwitchState) syncSelection(rt *host.Host) {
 		}
 	}
 	s.syncModels(rt, model)
-	s.thinkingIdx = thinkingIndexOf(rt.CurrentThinking(s.role()))
+	s.syncThinking(rt)
 	s.message = ""
 }
 
-func (s *modelSwitchState) syncModels(rt *host.Host, preferred string) {
+func (s *modelSwitchState) syncModels(rt modelRuntime, preferred string) {
 	s.models = rt.ConfiguredModels(s.provider())
 	s.modelIdx = 0
 	if len(s.models) == 0 {
@@ -192,21 +226,29 @@ func (s *modelSwitchState) syncModels(rt *host.Host, preferred string) {
 	}
 }
 
-func (s *modelSwitchState) apply(rt *host.Host) error {
+func (s *modelSwitchState) syncThinking(rt modelRuntime) {
+	s.thinking = thinkingOptionsFor(rt, s.role())
+	s.thinkingIdx = thinkingIndexOf(s.thinking, rt.CurrentThinking(s.role()))
+}
+
+func (s *modelSwitchState) apply(rt modelRuntime) error {
 	if len(s.providers) == 0 {
 		return fmt.Errorf("当前没有可用 provider")
 	}
 	if len(s.models) == 0 {
 		return fmt.Errorf("provider %q 没有已配置模型", s.provider())
 	}
+	wantThinking := s.thinkingKey()
 	if err := rt.SwitchModel(s.role(), s.provider(), s.model()); err != nil {
 		return err
 	}
-	// 思考强度与模型正交：仅当较当前值有变化时应用，避免冗余持久化/事件。
-	if want := s.thinkingKey(); want != strings.ToLower(strings.TrimSpace(rt.CurrentThinking(s.role()))) {
-		if err := rt.SetRoleThinking(s.role(), want); err != nil {
+	s.syncThinking(rt)
+	// 推理强度与模型正交：仅当较当前值有变化时应用，避免冗余持久化/事件。
+	if wantThinking != strings.ToLower(strings.TrimSpace(rt.CurrentThinking(s.role()))) {
+		if err := rt.SetRoleThinking(s.role(), wantThinking); err != nil {
 			return err
 		}
+		s.syncThinking(rt)
 	}
 	return nil
 }
@@ -258,7 +300,7 @@ func renderModelSwitchBar(width int, state *modelSwitchState) string {
 	row1 := renderModelField("角色", state.roleLabel(), state.focus == modelFocusRole)
 	row2 := renderModelField("Provider", state.provider(), state.focus == modelFocusProvider)
 	row3 := renderModelField("模型", state.model(), state.focus == modelFocusModel)
-	row4 := renderModelField("思考", state.thinkingLabel(), state.focus == modelFocusThinking)
+	row4 := renderModelField("推理强度", state.thinkingLabel(), state.focus == modelFocusThinking)
 	hint := lipgloss.NewStyle().
 		Foreground(colorDim).
 		Italic(true).

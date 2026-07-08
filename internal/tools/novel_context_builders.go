@@ -137,36 +137,18 @@ func (t *ContextTool) buildProgressStatus(result map[string]any) {
 // 注入策略：只给 LLM 看 structured + preferences——这两项才是创作时需要遵循的偏好。
 // sources / conflicts 是诊断信息（用户冲突排查），不进 LLM；由 CLI 启动诊断面板按需展示。
 func (t *ContextTool) buildUserRules(result map[string]any) {
-	bundle := rules.Merge(rules.Load(t.rulesOpts))
-	payload := map[string]any{
-		"structured":  bundle.Structured,
-		"preferences": bundle.Preferences,
+	snap, err := t.store.UserRules.Load()
+	if err != nil || snap == nil {
+		// 快照未生成（老书首次/异常）：退到代码内置默认，保证机械底线（字数/禁语/疲劳词）始终存在。
+		def := rules.BuildSnapshot([]rules.Candidate{rules.SystemDefaults()})
+		snap = &def
 	}
 	working, ok := result["working_memory"].(map[string]any)
 	if !ok {
 		working = map[string]any{}
 		result["working_memory"] = working
 	}
-	working["user_rules"] = payload
-}
-
-// buildUserDirectives 把用户长效创作要求注入 working_memory.user_directives（canonical 路径）。
-//
-// 与 buildUserRules 同为单点注入：writer / editor / architect / coordinator 任一路径
-// 都拿到一致的列表。空列表也注入 []，保持字段稳定（同 user_rules 先例），
-// 也让 prompt 指针一致性测试天然可解析。条目形状见 directiveFacts。
-func (t *ContextTool) buildUserDirectives(result map[string]any, warn func(string, error)) {
-	list, err := t.store.Directives.Load()
-	if err != nil {
-		warn("user_directives", err)
-		return
-	}
-	working, ok := result["working_memory"].(map[string]any)
-	if !ok {
-		working = map[string]any{}
-		result["working_memory"] = working
-	}
-	working["user_directives"] = directiveFacts(list)
+	working["user_rules"] = snap.Payload()
 }
 
 func (t *ContextTool) buildSimulationProfile(result map[string]any, sectionKey string, warn func(string, error)) {
@@ -414,6 +396,15 @@ func (t *ContextTool) buildChapterWorkingMemory(envelope *chapterContextEnvelope
 
 	if state.profile.Layered {
 		t.loadLayeredSummaries(envelope.Working, state.chapter, state.profile.SummaryWindow, warn)
+		// 收官纪律：本章属于已宣告的收官卷时注入，防 writer 在收官段临章再开新钩子
+		//（收官卷写完即自动完结，此时新埋的伏笔永远没有机会回收）。
+		if volumes, err := t.store.Outline.LoadLayeredOutline(); err == nil {
+			if fv := domain.FinaleVolume(volumes); fv > 0 {
+				if b, berr := t.store.Outline.CheckArcBoundary(state.chapter); berr == nil && b != nil && b.Volume == fv {
+					envelope.Working["finale"] = "本卷为全书收官卷：不再新开长线或埋新伏笔，优先回收既有伏笔、收拢关系线，按大纲把故事推向终局。"
+				}
+			}
+		}
 	} else {
 		if summaries, err := t.store.Summaries.LoadRecentSummaries(state.chapter, state.profile.SummaryWindow); err == nil && len(summaries) > 0 {
 			envelope.Working["recent_summaries"] = summaries
@@ -642,6 +633,9 @@ func (t *ContextTool) completionSignals(layered []domain.VolumeOutline, compass 
 	if len(layered) > 0 {
 		signals["planned_chapters"] = len(domain.FlattenOutline(layered))
 		signals["volumes_total"] = len(layered)
+		if fv := domain.FinaleVolume(layered); fv > 0 {
+			signals["final_volume"] = fv
+		}
 	}
 	if compass != nil {
 		if compass.EstimatedScale != "" {
